@@ -17,6 +17,7 @@ class Bubbles {
     add_action('admin_init', array($this, 'register_theme_settings'));
     add_action('admin_menu', array($this, 'register_options_page'));
     add_action('rest_api_init', array($this, 'register_endpoint'));
+    $this->register_shortcode();
   }
 
   function register_theme_settings(){
@@ -96,7 +97,47 @@ class Bubbles {
   }
 
   function register_shortcode(){
+    // Add shortcode
+    add_shortcode('mailchimp_signup', array($this, 'shortcode_markup'));
 
+    // Register JS for shortcode
+    add_action('wp_enqueue_scripts', array($this, 'register_script'));
+  }
+
+  function register_script(){
+    wp_register_script('axios/js', plugins_url('/bower_components/axios/dist/axios.min.js', __FILE__), array(), '1.0.0', true);
+    wp_register_script('bubbles/js', plugins_url('/dist/bubbles.min.js', __FILE__), array('axios/js'), '1.0.0', true);
+  }
+
+  function shortcode_markup($atts){
+    wp_enqueue_script('axios/js');
+    wp_enqueue_script('bubbles/js');
+
+    $attributes = shortcode_atts(array(
+      'form_class'   => 'form-inline',
+      'input_class'  => 'form-control',
+      'list_id'      => '',
+      'placeholder'  => __('Enter email address', 'bubbles'),
+      'submit_class' => 'btn',
+      'submit_text'  => __('Sign up', 'bubbles')
+    ), $atts);
+
+    return "
+    <div id=\"mailchimp_confirmation\" class=\"mailchimp-confirmation\"></div>
+    <form id=\"mailchimp_signup\" class=\"".$attributes['form_class']."\" data-list=\"".$attributes['list_id']."\">
+      <input
+        name=\"email\"
+        class=\"".$attributes['input_class']."\"
+        type=\"email\"
+        placeholder=\"".$attributes['placeholder']."\"
+      >
+      <input
+        class=\"".$attributes['submit_class']."\"
+        type=\"submit\"
+        value=\"".$attributes['submit_text']."\"
+      >
+    </form>
+    ";
   }
 
 }
